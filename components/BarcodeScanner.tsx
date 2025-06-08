@@ -15,6 +15,8 @@ export default function BarcodeScanner({ onScan, onClose, isOpen }: BarcodeScann
   const [isScanning, setIsScanning] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const codeReaderRef = useRef<BrowserMultiFormatReader | null>(null);
+  const [scannedBarcode, setScannedBarcode] = useState<string>('');
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
 
   useEffect(() => {
     if (isOpen && !isScanning) {
@@ -49,9 +51,9 @@ export default function BarcodeScanner({ onScan, onClose, isOpen }: BarcodeScann
         (result, error) => {
           if (result) {
             const barcode = result.getText();
-            onScan(barcode);
+            setScannedBarcode(barcode);
+            setShowConfirmModal(true);
             stopScanning();
-            onClose();
           }
           if (error && !(error.name === 'NotFoundException')) {
             console.error('Barcode scan error:', error);
@@ -84,6 +86,21 @@ export default function BarcodeScanner({ onScan, onClose, isOpen }: BarcodeScann
   const handleClose = () => {
     stopScanning();
     onClose();
+  };
+
+  const handleConfirmBarcode = () => {
+    onScan(scannedBarcode);
+    setShowConfirmModal(false);
+    onClose();
+  };
+
+  const handleEditBarcode = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setScannedBarcode(e.target.value);
+  };
+
+  const handleRescan = () => {
+    setShowConfirmModal(false);
+    startScanning();
   };
 
   if (!isOpen) return null;
@@ -147,6 +164,42 @@ export default function BarcodeScanner({ onScan, onClose, isOpen }: BarcodeScann
           )}
         </div>
       </div>
+
+      {/* Barcode Confirmation Modal */}
+      {showConfirmModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-sm w-full p-6">
+            <h3 className="text-lg font-semibold mb-4">バーコードの確認</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  読み取られたバーコード
+                </label>
+                <input
+                  type="text"
+                  value={scannedBarcode}
+                  onChange={handleEditBarcode}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+              <div className="flex justify-end space-x-3">
+                <button
+                  onClick={handleRescan}
+                  className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                >
+                  再スキャン
+                </button>
+                <button
+                  onClick={handleConfirmBarcode}
+                  className="px-4 py-2 text-white bg-blue-500 hover:bg-blue-600 rounded-lg transition-colors"
+                >
+                  確定
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
