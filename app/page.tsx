@@ -68,21 +68,41 @@ export default function Home() {
       // 環境変数からAPIのベースURLを取得
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://app-step4-19.azurewebsites.net';
       
-      // 直接外部APIから商品情報を取得
-      const response = await fetch(`${apiUrl}/api/product`, {
+      // リクエストの内容を準備
+      const requestBody = { code: scannedBarcode };
+      const requestConfig = {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ code: scannedBarcode }),
-      });
+        body: JSON.stringify(requestBody),
+      };
+
+      // 直接外部APIから商品情報を取得
+      const response = await fetch(`${apiUrl}/api/barcode`, requestConfig);
 
       if (!response.ok) {
         if (response.status === 404) {
-          alert('商品が見つかりませんでした。手動で商品情報を入力してください。');
+          const errorText = await response.text();
+          const debugInfo = {
+            status: response.status,
+            statusText: response.statusText,
+            body: errorText,
+            request: {
+              url: `${apiUrl}/api/product`,
+              method: 'POST',
+              headers: requestConfig.headers,
+              body: requestBody
+            }
+          };
+          console.log('API Response:', debugInfo);
+          alert(`バーコード「${scannedBarcode}」の商品が見つかりませんでした。\n手動で商品情報を入力してください。\n\nエラー詳細:\nステータス: ${response.status}\nステータステキスト: ${response.statusText}\nレスポンス: ${errorText}\n\nリクエスト内容:\nURL: ${apiUrl}/api/product\nメソッド: POST\nヘッダー: ${JSON.stringify(requestConfig.headers)}\nボディ: ${JSON.stringify(requestBody)}`);
           return;
         }
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorData = await response.json().catch(() => null);
+        console.error('API Error:', errorData);
+        alert(`商品情報の取得中にエラーが発生しました。\nエラーコード: ${response.status}\nステータステキスト: ${response.statusText}\n${errorData?.message || '手動で商品情報を入力してください。'}\n\nリクエスト内容:\nURL: ${apiUrl}/api/product\nメソッド: POST\nヘッダー: ${JSON.stringify(requestConfig.headers)}\nボディ: ${JSON.stringify(requestBody)}`);
+        return;
       }
 
       const productData: ProductResponse = await response.json();
@@ -407,24 +427,17 @@ export default function Home() {
 
       {/* Purchase Complete Modal */}
       {showPurchaseModal && transactionData && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-sm sm:max-w-md w-full relative">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg max-w-sm sm:max-w-md w-full relative shadow-lg">
             <button
               onClick={() => setShowPurchaseModal(false)}
               className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
             >
               <X className="w-6 h-6" />
             </button>
-            
             <div className="p-4 sm:p-6 text-center">
-              <img 
-                src="/image.png" 
-                alt="購入完了" 
-                className="w-full h-auto mb-4 rounded-lg"
-              />
-              
               <div className="space-y-2 text-base sm:text-lg">
-                <p className="text-gray-800">お買い上げありがとうございました。</p>
+                <p className="text-gray-800">まいどおおきに！また来てな！</p>
                 <p className="font-bold text-lg sm:text-xl">
                   合計 {transactionData.totalPrice.toLocaleString()}円 
                   <br className="sm:hidden" />
@@ -432,7 +445,6 @@ export default function Home() {
                   <span className="sm:hidden">（</span>税抜き {transactionData.totalPriceNoTax.toLocaleString()}円）
                 </p>
               </div>
-              
               <button
                 onClick={() => setShowPurchaseModal(false)}
                 className="mt-6 bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-6 sm:px-8 rounded-lg transition-colors duration-200"
