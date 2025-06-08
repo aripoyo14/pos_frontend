@@ -83,29 +83,22 @@ export default function Home() {
 
       if (!response.ok) {
         if (response.status === 404) {
-          const errorText = await response.text();
-          const debugInfo = {
-            status: response.status,
-            statusText: response.statusText,
-            body: errorText,
-            request: {
-              url: `${apiUrl}/api/product`,
-              method: 'POST',
-              headers: requestConfig.headers,
-              body: requestBody
-            }
-          };
-          console.log('API Response:', debugInfo);
-          alert(`バーコード「${scannedBarcode}」の商品が見つかりませんでした。\n手動で商品情報を入力してください。\n\nエラー詳細:\nステータス: ${response.status}\nステータステキスト: ${response.statusText}\nレスポンス: ${errorText}\n\nリクエスト内容:\nURL: ${apiUrl}/api/product\nメソッド: POST\nヘッダー: ${JSON.stringify(requestConfig.headers)}\nボディ: ${JSON.stringify(requestBody)}`);
+          alert("その商品、取り扱ってへんねん。ごめんやで！！");
+          setBarcode(''); // バーコード欄をクリア
           return;
         }
         const errorData = await response.json().catch(() => null);
         console.error('API Error:', errorData);
-        alert(`商品情報の取得中にエラーが発生しました。\nエラーコード: ${response.status}\nステータステキスト: ${response.statusText}\n${errorData?.message || '手動で商品情報を入力してください。'}\n\nリクエスト内容:\nURL: ${apiUrl}/api/product\nメソッド: POST\nヘッダー: ${JSON.stringify(requestConfig.headers)}\nボディ: ${JSON.stringify(requestBody)}`);
+        alert(`商品情報の取得中にエラーが発生しました。`);
         return;
       }
 
       const productData: ProductResponse = await response.json();
+      if (!productData) {
+        alert('その商品、取り扱ってへんねん。ごめんやで！！');
+        setBarcode('');
+        return;
+      }
       
       // フォームに商品情報を設定
       setProductName(productData.name);
@@ -113,7 +106,8 @@ export default function Home() {
       
     } catch (error) {
       console.error('Error fetching product:', error);
-      alert('商品情報の取得中にエラーが発生しました。手動で商品情報を入力してください。');
+      alert('商品情報の取得中にエラーが発生しました。');
+      setBarcode(''); // バーコード欄をクリア
     } finally {
       setIsLoading(false);
     }
