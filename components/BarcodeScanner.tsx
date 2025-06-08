@@ -46,7 +46,7 @@ export default function BarcodeScanner({ onScan, onClose, isOpen }: BarcodeScann
       codeReaderRef.current = new BrowserMultiFormatReader();
       
       codeReaderRef.current.decodeFromVideoDevice(
-        undefined, // デフォルトのビデオデバイスを使用
+        null, // デフォルトのビデオデバイスを使用
         videoRef.current!,
         (result, error) => {
           if (result) {
