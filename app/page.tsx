@@ -65,9 +65,6 @@ export default function Home() {
       // バーコードをフォームに設定
       setBarcode(scannedBarcode);
       
-      // 環境変数からAPIのベースURLを取得
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://app-step4-19.azurewebsites.net';
-      
       // リクエストの内容を準備
       const requestBody = { code: scannedBarcode };
       const requestConfig = {
@@ -78,8 +75,8 @@ export default function Home() {
         body: JSON.stringify(requestBody),
       };
 
-      // 直接外部APIから商品情報を取得
-      const response = await fetch(`${apiUrl}/api/barcode`, requestConfig);
+      // 内部APIから商品情報を取得
+      const response = await fetch('/api/barcode', requestConfig);
 
       if (!response.ok) {
         if (response.status === 404) {
@@ -137,7 +134,7 @@ export default function Home() {
       // Get product ID if available
       let prdId: number | undefined;
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://app-step4-19.azurewebsites.net';
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL;
         
         const response = await fetch(`${apiUrl}/api/product`, {
           method: 'POST',
@@ -199,11 +196,8 @@ export default function Home() {
         }))
       };
 
-      // 環境変数からAPIのベースURLを取得
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://app-step4-19.azurewebsites.net';
-
-      // 直接外部APIに取引データを送信
-      const response = await fetch(`${apiUrl}/api/transaction`, {
+      // 内部APIに取引データを送信
+      const response = await fetch('/api/transaction', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -380,7 +374,7 @@ export default function Home() {
                   
                   <div className="mt-4 pt-4 border-t border-gray-200">
                     <div className="flex justify-between items-center text-lg sm:text-xl font-bold text-gray-900">
-                      <span>合計</span>
+                      <span>合計（税抜）</span>
                       <span>{totalAmount.toLocaleString()}円</span>
                     </div>
                   </div>
@@ -413,11 +407,13 @@ export default function Home() {
       </div>
 
       {/* Barcode Scanner Modal */}
-      <BarcodeScanner
-        isOpen={showScanner}
-        onScan={handleBarcodeScanned}
-        onClose={() => setShowScanner(false)}
-      />
+      {showScanner && (
+        <BarcodeScanner
+          isOpen={showScanner}
+          onScan={handleBarcodeScanned}
+          onClose={() => setShowScanner(false)}
+        />
+      )}
 
       {/* Purchase Complete Modal */}
       {showPurchaseModal && transactionData && (
