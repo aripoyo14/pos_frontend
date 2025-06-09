@@ -45,31 +45,34 @@ export default function BarcodeScanner({ onScan, onClose, isOpen }: BarcodeScann
         videoRef.current.srcObject = stream;
       }
 
-      // ZXingライブラリでバーコードスキャンを開始（バーコード種類指定）
-      const hints = new Map();
-      hints.set(DecodeHintType.POSSIBLE_FORMATS, [
-        BarcodeFormat.EAN_13,
-        BarcodeFormat.CODE_128,
-        BarcodeFormat.QR_CODE
-      ]);
-      codeReaderRef.current = new BrowserMultiFormatReader(hints);
-      
-      codeReaderRef.current.decodeFromVideoDevice(
-        null, // デフォルトのビデオデバイスを使用
-        videoRef.current!,
-        (result, error) => {
-          if (result && !scannedRef.current) {
-            scannedRef.current = true;
-            stopScanning();
-            onScan(result.getText());
-            onClose();
+      // 300ms待ってからスキャン開始
+      setTimeout(() => {
+        // ZXingライブラリでバーコードスキャンを開始（バーコード種類指定）
+        const hints = new Map();
+        hints.set(DecodeHintType.POSSIBLE_FORMATS, [
+          BarcodeFormat.EAN_13,
+          BarcodeFormat.CODE_128,
+          BarcodeFormat.QR_CODE
+        ]);
+        codeReaderRef.current = new BrowserMultiFormatReader(hints);
+        
+        codeReaderRef.current.decodeFromVideoDevice(
+          null, // デフォルトのビデオデバイスを使用
+          videoRef.current!,
+          (result, error) => {
+            if (result && !scannedRef.current) {
+              scannedRef.current = true;
+              stopScanning();
+              onScan(result.getText());
+              onClose();
+            }
+            if (error && !(error.name === 'NotFoundException')) {
+              setError('バーコードの読み取り中にエラーが発生しました: ' + error);
+              stopScanning();
+            }
           }
-          if (error && !(error.name === 'NotFoundException')) {
-            setError('バーコードの読み取り中にエラーが発生しました: ' + error);
-            stopScanning();
-          }
-        }
-      );
+        );
+      }, 300);
 
     } catch (err) {
       console.error('Camera access error:', err);
