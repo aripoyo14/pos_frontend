@@ -30,7 +30,7 @@ interface TransactionItem {
 }
 
 interface TransactionRequest {
-  EMP_CD: string;
+  EMP_CD: string | null;
   STORE_CD: string;
   POS_NO: string;
   TOTAL_AMT: number;
@@ -181,7 +181,7 @@ export default function Home() {
     try {
       // 取引データを準備
       const transactionData: TransactionRequest = {
-        EMP_CD: "",
+        EMP_CD: null,
         STORE_CD: "30", 
         POS_NO: "90",
         TOTAL_AMT: totalAmount,
