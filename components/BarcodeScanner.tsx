@@ -72,7 +72,7 @@ export default function BarcodeScanner({ onScan, onClose, isOpen }: BarcodeScann
             }
           }
         );
-      }, 300);
+      }, 30);
 
     } catch (err) {
       console.error('Camera access error:', err);

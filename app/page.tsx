@@ -162,8 +162,8 @@ export default function Home() {
         EMP_CD: "9999999999",
         STORE_CD: "30", 
         POS_NO: "90",
-        TOTAL_AMT: totalAmount,
-        TTL_AMT_EX_TAX: Math.floor(totalAmount / 1.1), // 仮の税抜き計算
+        TOTAL_AMT: Math.floor(totalAmount*1.1),
+        TTL_AMT_EX_TAX: totalAmount, // 仮の税抜き計算
         ITEMS: purchaseList.map(item => ({
           PRD_ID: item.prdId || 0,
           PRD_CODE: item.barcode,
