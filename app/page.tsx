@@ -374,7 +374,7 @@ export default function Home() {
                   
                   <div className="mt-4 pt-4 border-t border-gray-200">
                     <div className="flex justify-between items-center text-lg sm:text-xl font-bold text-gray-900">
-                      <span>合計</span>
+                      <span>合計（税抜）</span>
                       <span>{totalAmount.toLocaleString()}円</span>
                     </div>
                   </div>
@@ -407,11 +407,13 @@ export default function Home() {
       </div>
 
       {/* Barcode Scanner Modal */}
-      <BarcodeScanner
-        isOpen={showScanner}
-        onScan={handleBarcodeScanned}
-        onClose={() => setShowScanner(false)}
-      />
+      {showScanner && (
+        <BarcodeScanner
+          isOpen={showScanner}
+          onScan={handleBarcodeScanned}
+          onClose={() => setShowScanner(false)}
+        />
+      )}
 
       {/* Purchase Complete Modal */}
       {showPurchaseModal && transactionData && (
