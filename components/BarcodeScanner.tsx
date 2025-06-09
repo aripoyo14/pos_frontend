@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { BrowserMultiFormatReader } from '@zxing/library';
+import { BrowserMultiFormatReader, BarcodeFormat, DecodeHintType } from '@zxing/library';
 import { X, Camera } from 'lucide-react';
 
 interface BarcodeScannerProps {
@@ -34,18 +34,25 @@ export default function BarcodeScanner({ onScan, onClose, isOpen }: BarcodeScann
     try {
       setError(null);
       setIsScanning(true);
+      scannedRef.current = false;
 
-      // カメラの権限を要求
+      // カメラの権限を要求（解像度指定）
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment' } // 背面カメラを優先
+        video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
       });
 
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
       }
 
-      // ZXingライブラリでバーコードスキャンを開始
-      codeReaderRef.current = new BrowserMultiFormatReader();
+      // ZXingライブラリでバーコードスキャンを開始（バーコード種類指定）
+      const hints = new Map();
+      hints.set(DecodeHintType.POSSIBLE_FORMATS, [
+        BarcodeFormat.EAN_13,
+        BarcodeFormat.CODE_128,
+        BarcodeFormat.QR_CODE
+      ]);
+      codeReaderRef.current = new BrowserMultiFormatReader(hints);
       
       codeReaderRef.current.decodeFromVideoDevice(
         null, // デフォルトのビデオデバイスを使用
@@ -58,8 +65,7 @@ export default function BarcodeScanner({ onScan, onClose, isOpen }: BarcodeScann
             onClose();
           }
           if (error && !(error.name === 'NotFoundException')) {
-            console.error('Barcode scan error:', error);
-            setError('バーコードの読み取り中にエラーが発生しました。');
+            setError('バーコードの読み取り中にエラーが発生しました: ' + error);
             stopScanning();
           }
         }
@@ -67,7 +73,7 @@ export default function BarcodeScanner({ onScan, onClose, isOpen }: BarcodeScann
 
     } catch (err) {
       console.error('Camera access error:', err);
-      setError('カメラにアクセスできませんでした。カメラの権限を確認してください。');
+      setError('カメラにアクセスできませんでした。カメラの権限を確認してください。' + (err instanceof Error ? '\n' + err.message : ''));
       setIsScanning(false);
     }
   };
