@@ -73,6 +73,7 @@ export default function BarcodeScanner({ onScan, onClose, isOpen }: BarcodeScann
 
     } catch (err) {
       console.error('Camera access error:', err);
+      console.log('getUserMedia error detail:', err);
       setError('カメラにアクセスできませんでした。カメラの権限を確認してください。' + (err instanceof Error ? '\n' + err.message : ''));
       setIsScanning(false);
     }
