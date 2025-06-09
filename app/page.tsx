@@ -53,17 +53,16 @@ export default function Home() {
   const [showPurchaseModal, setShowPurchaseModal] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
   const [transactionData, setTransactionData] = useState<TransactionResponse | null>(null);
+  const [prdId, setPrdId] = useState<number | undefined>(undefined);
 
   const handleScan = () => {
     setShowScanner(true);
   };
 
   const handleBarcodeScanned = async (scannedBarcode: string) => {
-    setIsLoading(true);
-    
     try {
-      // バーコードをフォームに設定
       setBarcode(scannedBarcode);
+      setIsLoading(true);
       
       // リクエストの内容を準備
       const requestBody = { code: scannedBarcode };
@@ -74,14 +73,14 @@ export default function Home() {
         },
         body: JSON.stringify(requestBody),
       };
-
+      
       // 内部APIから商品情報を取得
       const response = await fetch('/api/barcode', requestConfig);
-
+      
       if (!response.ok) {
         if (response.status === 404) {
           alert("その商品、取り扱ってへんねん。ごめんやで！！");
-          setBarcode(''); // バーコード欄をクリア
+          setBarcode('');
           return;
         }
         const errorData = await response.json().catch(() => null);
@@ -89,7 +88,7 @@ export default function Home() {
         alert(`商品情報の取得中にエラーが発生しました。`);
         return;
       }
-
+      
       const productData: ProductResponse = await response.json();
       if (!productData) {
         alert('その商品、取り扱ってへんねん。ごめんやで！！');
@@ -97,14 +96,13 @@ export default function Home() {
         return;
       }
       
-      // フォームに商品情報を設定
       setProductName(productData.name);
       setPrice(productData.price.toString());
-      
+      setPrdId(productData.prd_id);
     } catch (error) {
       console.error('Error fetching product:', error);
       alert('商品情報の取得中にエラーが発生しました。');
-      setBarcode(''); // バーコード欄をクリア
+      setBarcode('');
     } finally {
       setIsLoading(false);
     }
@@ -131,27 +129,6 @@ export default function Home() {
       updatedList[existingItemIndex].quantity += 1;
       setPurchaseList(updatedList);
     } else {
-      // Get product ID if available
-      let prdId: number | undefined;
-      try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-        
-        const response = await fetch(`${apiUrl}/api/product`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ code: barcode }),
-        });
-        
-        if (response.ok) {
-          const productData: ProductResponse = await response.json();
-          prdId = productData.prd_id;
-        }
-      } catch (error) {
-        console.log('Could not fetch product ID, proceeding without it');
-      }
-
       // Add new item
       const newItem: PurchaseItem = {
         id: Date.now().toString(),
@@ -168,6 +145,7 @@ export default function Home() {
     setBarcode('');
     setProductName('');
     setPrice('');
+    setPrdId(undefined);
   };
 
   const handlePurchase = async () => {
@@ -181,7 +159,7 @@ export default function Home() {
     try {
       // 取引データを準備
       const transactionData: TransactionRequest = {
-        EMP_CD: null,
+        EMP_CD: "9999999999",
         STORE_CD: "30", 
         POS_NO: "90",
         TOTAL_AMT: totalAmount,

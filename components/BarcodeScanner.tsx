@@ -15,14 +15,18 @@ export default function BarcodeScanner({ onScan, onClose, isOpen }: BarcodeScann
   const [isScanning, setIsScanning] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const codeReaderRef = useRef<BrowserMultiFormatReader | null>(null);
+  const scannedRef = useRef(false);
 
   useEffect(() => {
+    scannedRef.current = false;
     if (isOpen && !isScanning) {
       startScanning();
     }
 
     return () => {
-      stopScanning();
+      if (isScanning) {
+        stopScanning();
+      }
     };
   }, [isOpen]);
 
@@ -47,14 +51,16 @@ export default function BarcodeScanner({ onScan, onClose, isOpen }: BarcodeScann
         null, // デフォルトのビデオデバイスを使用
         videoRef.current!,
         (result, error) => {
-          if (result) {
-            const barcode = result.getText();
-            onScan(barcode);
+          if (result && !scannedRef.current) {
+            scannedRef.current = true;
             stopScanning();
+            onScan(result.getText());
             onClose();
           }
           if (error && !(error.name === 'NotFoundException')) {
             console.error('Barcode scan error:', error);
+            setError('バーコードの読み取り中にエラーが発生しました。');
+            stopScanning();
           }
         }
       );
@@ -68,12 +74,20 @@ export default function BarcodeScanner({ onScan, onClose, isOpen }: BarcodeScann
 
   const stopScanning = () => {
     if (codeReaderRef.current) {
-      codeReaderRef.current.reset();
+      try {
+        codeReaderRef.current.reset();
+      } catch (error) {
+        console.error('Error resetting code reader:', error);
+      }
     }
     if (videoRef.current && videoRef.current.srcObject) {
-      const stream = videoRef.current.srcObject as MediaStream;
-      stream.getTracks().forEach(track => track.stop());
-      videoRef.current.srcObject = null;
+      try {
+        const stream = videoRef.current.srcObject as MediaStream;
+        stream.getTracks().forEach(track => track.stop());
+        videoRef.current.srcObject = null;
+      } catch (error) {
+        console.error('Error stopping video stream:', error);
+      }
     }
     setIsScanning(false);
   };
